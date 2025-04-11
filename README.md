@@ -25,5 +25,5 @@ This is version 2.0 of the Hangman game, built with React. In this version, we'v
 1. **Clone the Repository:**
 
    ```bash
-   git clone https://github.com/YourUsername/hangman2.0.git
+   git clone https://github.com/UniqueMc/hangman2.0.git
    cd hangman2.0
