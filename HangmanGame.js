@@ -5,7 +5,7 @@ import LetterBox from './LetterBox';
 import SingleLetterSearchBar from './SingleLetterSearchBar';
 
 const pics = [
-  'noose.png',             
+  'noose.png',              
   'upperbody.png',          
   'upperandlowerbody.png',  
   '1arm.png',               
@@ -35,16 +35,16 @@ class HangmanGame extends React.Component {
       usedLetters: [],
       gameOver: false,
       gameWon: false,
+      sessionWins: 0,
+      sessionGames: 0,
     };
   }
 
   componentDidMount() {
-    
     this.setState({ wordList: words });
   }
 
   startNewGame = () => {
-   
     this.setState({
       curWord: Math.floor(Math.random() * this.state.wordList.length),
       lifeLeft: 0,
@@ -56,11 +56,9 @@ class HangmanGame extends React.Component {
 
   handleGuess = (letter) => {
     letter = letter.toLowerCase();
-
-    
     if (this.state.usedLetters.includes(letter) || this.state.gameOver) return;
 
-    const { wordList, curWord, usedLetters, lifeLeft } = this.state;
+    const { wordList, curWord, usedLetters, lifeLeft, sessionWins, sessionGames } = this.state;
     const currentWord = wordList[curWord].toLowerCase();
     const updatedLetters = [...usedLetters, letter];
     let updatedLifeLeft = lifeLeft;
@@ -69,7 +67,6 @@ class HangmanGame extends React.Component {
       updatedLifeLeft += 1;
     }
 
-    
     const maxMistakes = pics.length - 1;
     const gameLost = updatedLifeLeft >= maxMistakes;
     const gameWon = currentWord.split('').every((char) =>
@@ -77,17 +74,26 @@ class HangmanGame extends React.Component {
     );
     const gameOver = gameLost || gameWon;
 
+    
+    let newSessionGames = sessionGames;
+    let newSessionWins = sessionWins;
+    if (gameOver) {
+      newSessionGames += 1;
+      if (gameWon) newSessionWins += 1;
+    }
+
     this.setState({
       usedLetters: updatedLetters,
       lifeLeft: updatedLifeLeft,
       gameOver,
       gameWon,
+      sessionGames: newSessionGames,
+      sessionWins: newSessionWins,
     });
   };
 
-  
   updateWinRecord = async (didWin) => {
-    const customerId = "6123456789abcdef01234567"; 
+    const customerId = "6123456789abcdef01234567";
     try {
       const response = await fetch('http://localhost:5000/api/update-win', {
         method: 'POST',
@@ -102,7 +108,6 @@ class HangmanGame extends React.Component {
   };
 
   componentDidUpdate(prevProps, prevState) {
-   
     if (!prevState.gameOver && this.state.gameOver) {
       this.updateWinRecord(this.state.gameWon);
     }
@@ -111,28 +116,43 @@ class HangmanGame extends React.Component {
   renderWord = () => {
     const { wordList, curWord, usedLetters } = this.state;
     if (wordList.length === 0) return null;
+
     const word = wordList[curWord];
     return (
       <div style={{ margin: '20px' }}>
-        {word.split('').map((char, idx) => {
-          const isVisible = usedLetters.includes(char.toLowerCase());
-          return (
-            <LetterBox
-              key={idx}
-              letter={char}
-              isVisible={isVisible}
-              boxStyle={{ display: 'inline-block', margin: '5px' }}
-              letterStyle={{ fontSize: '30px' }}
-            />
-          );
-        })}
+      {word.split('').map((char, idx) => {
+       const isVisible = usedLetters.includes(char.toLowerCase());
+        return (
+        <LetterBox
+        key={idx}
+        letter={char}
+        isVisible={isVisible}
+        boxStyle={{ display: 'inline-block', margin: '5px' }}
+        letterStyle={{ fontSize: '30px' }}
+        />
+        );
+       })}
       </div>
     );
   };
 
   render() {
-    const { wordList, curWord, lifeLeft, usedLetters, gameOver, gameWon } = this.state;
+    const {
+      wordList,
+      curWord,
+      lifeLeft,
+      usedLetters,
+      gameOver,
+      gameWon,
+      sessionWins,
+      sessionGames
+    } = this.state;
     const currentPic = pics[lifeLeft] || pics[pics.length - 1];
+
+
+    const winPct =
+      sessionGames > 0 ? Math.round((sessionWins / sessionGames) * 100) : 0;
+
     return (
       <div className="HangmanGame">
         <h1>Hangman Game</h1>
@@ -153,6 +173,14 @@ class HangmanGame extends React.Component {
         <div>
           <h3>Used Letters:</h3>
           <p>{usedLetters.join(', ')}</p>
+        </div>
+        
+        <div>
+          <h3>Session Stats:</h3>
+          <p>
+            Wins: {sessionWins} / {sessionGames} games<br />
+            Winning percentage: {winPct}%
+          </p>
         </div>
       </div>
     );
